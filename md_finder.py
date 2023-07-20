@@ -14,41 +14,45 @@ def get_file_paths(walk: Iterator) -> list[str]:
             result.append(fr"{root}\{file}")
     return result
 
-paths = get_file_paths(directory_walk)
+def compose_file_data(paths: list[str]) -> list[dict]:
+    files = []
+    for path in paths:
+        file_name = path.split("\\")[-1]
+        parent_dir = path.split("\\")[-2]
 
-
-# with open(r"C:\Users\Mourn\my_project\markdown_finder\readmes", "w") as file:
-#     for path in paths:
-#         file_name = path.split("\\")[-1]
-#         if "readme" in file_name and "python_samples_google" not in path[0]:
-#             output = fr"[{file_name}]({path})"
-#             print(output, file=file)
-
-# TODO sort by root
-files = []
-# {
-# "fileName": {
-# "day": num
-#   }
-# }
-for path in paths:
-    file_name = path.split("\\")[-1]
-    parent_dir = path.split("\\")[-2]
-    if "readme" in file_name and "python_samples_google" not in path[0]:
-        day_number = re.search(r"\d+", parent_dir)
-        if day_number is None:
-            print(file_name)
-            print(parent_dir)
-            print(path)
-        else:
-            entry = {
-                file_name: {
-                    "day": day_number.group(0),
-                    "parent": parent_dir
+        if "readme" in file_name and "python_samples_google" not in path[0]:
+            day_number = re.findall(r"\d+(?!])", path)
+            if not day_number:
+                print(file_name)
+                print(path)
+            else:
+                entry = {
+                    file_name: {
+                        "day": day_number[-1],
+                        "path": path
+                    }
                 }
-            }
-            files.append(entry)
+                files.append(entry)
+    return files
 
-sorted_list = sorted(files, key = lambda d: int([i for i in d.items()][0][1]['day']))
-pprint(sorted_list, indent=2)
-first = files[0]
+
+def make_file(data: list[dict]) -> None:
+    for dict in data:
+        file_name = [k for k in dict.keys()][0]
+        day = dict[file_name]["day"]
+        path = dict[file_name]["path"]
+        link_text = f"Day {day}: {file_name}"
+        with open(r"C:\Users\Mourn\my_project\markdown_finder\readmes", "a") as file:
+            output = fr"[{link_text}]({path})"
+            print(output, file=file)
+
+
+paths = get_file_paths(directory_walk)
+file_data = compose_file_data(paths)
+
+
+sorted_file_data = sorted(file_data, key = lambda d: int([i for i in d.items()][0][1]['day']))
+# pprint(sorted_file_data, indent=2)
+make_file(sorted_file_data)
+
+
